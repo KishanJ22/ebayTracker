@@ -4,7 +4,9 @@ import numpy as np
 import csv
 from datetime import datetime
 
-LINK = input("Enter an eBay link to find the average price for the product! ")
+print("Welcome to the eBay Price Tracker!")
+print("Enter an eBay link to find the average price for the product! ")
+LINK = input("Input here: ")
 
 def get_prices_by_link(link):
     r = requests.get(link)
@@ -20,6 +22,12 @@ def get_prices_by_link(link):
         item_prices.append(price)
     return item_prices
 
+def getProductName(link):
+    r = requests.get(link)
+    page_parse = BeautifulSoup(r.text, 'html.parser')
+    input_tag = page_parse.find("input", {"class": "gh-tb ui-autocomplete-input"})
+    product_name = input_tag["value"]
+    return product_name
 
 def remove_outliers(prices, m=2):
     data = np.array(prices)
@@ -31,7 +39,9 @@ def get_avg(prices):
 
 
 def save_to_file(prices):
-    fields = [datetime.today().strftime("%B-%F-%Y"),np.around(get_avg(prices),2)]
+    fields = ["Date: "+datetime.today().strftime("%d-%m-%y"),
+              "Product name: "+getProductName(LINK),
+              "Average price: "+str(np.around(get_avg(prices), 2))]
     with open('prices.csv', 'a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(fields)
@@ -40,5 +50,6 @@ def save_to_file(prices):
 if __name__ == "__main__":
     prices = get_prices_by_link(LINK)
     without_outliers = remove_outliers(prices)
-    print(get_avg(without_outliers))
-    save_to_file(prices)
+    print("Product name: "+getProductName(LINK))
+    print("Average Price: "+str(np.around(get_avg(without_outliers), 2)))
+    save_to_file(without_outliers)
